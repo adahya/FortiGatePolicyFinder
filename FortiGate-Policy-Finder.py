@@ -2,21 +2,26 @@ import sys
 import re
 import ipaddress
 
+DEBUG = True
 
 def expand_range(iprangestr):
-    if is_ip_range(iprangestr):
-        split = iprangestr.split('-')
-        start_ip = split[0]
-        iprange = (iprangestr.split('.')[-1]).split('-')
-        iprange = list(range(int(iprange[0]),int(iprange[1])+1))
-        netobj = ipaddress.IPv4Network(start_ip+'/24', strict=False)
-        iprange = ([str(netobj[i]) for i in iprange])
-        expanded_ips = None
-        for l in iprange :
-            if expanded_ips is None :
-                expanded_ips = l
-            expanded_ips += ',' + l
-        return expanded_ips
+    try:
+        if is_ip_range(iprangestr):
+            split = iprangestr.split('-')
+            start_ip = split[0]
+            iprange = (iprangestr.split('.')[-1]).split('-')
+            iprange = list(range(int(iprange[0]),int(iprange[1])+1))
+            netobj = ipaddress.IPv4Network(start_ip+'/24', strict=False)
+            iprange = ([str(netobj[i]) for i in iprange])
+            expanded_ips = None
+            for l in iprange :
+                if expanded_ips is None :
+                    expanded_ips = l
+                expanded_ips += ',' + l
+    except:
+        print(iprangestr)
+        raise
+    return expanded_ips
 
 def is_ip_range(teststr):
     return True if '-' in teststr else False
@@ -60,6 +65,13 @@ def Filter_Policies(configfilename):
 
 
 def Process_AddrGroups(ListOfIPs,configfilename):
+    """
+
+    :param ListOfIPs:
+    :param configfilename: config file to read object info from.
+    :return:
+    """
+
     expanded_ips = None
     CSV = ListOfIPs.replace('"','')
     list = CSV.split(',')
@@ -69,11 +81,11 @@ def Process_AddrGroups(ListOfIPs,configfilename):
                 expanded_ips = l
             expanded_ips += ',' + expand_range(l)
         else :
-            Return_Addr_From_IP_Groups(l,configfilename)
+            expanded_ips = ','.join(Return_Addr_From_IP_Groups(l,configfilename))
     return expanded_ips
 
 
-def Return_Addr_From_IP_Groups(AddrGroup,configfilename):
+def Return_Addr_From_IP_Groups(AddrGroup, configfilename):
     ListofIPs = None
     Matched = False
     config_mode = 'ExecMode'
@@ -102,8 +114,8 @@ def Return_Addr_From_IP_Groups(AddrGroup,configfilename):
         sys.stdout.write(ListofIPs + '\n\n')
     return ListofIPs
 
-
-
-
 if __name__ == '__main__':
-    Filter_Policies('FWRY02-VDOM-FWRY13')
+    #enter input file
+    print("Enter input filename:")
+    fname = input()
+    Filter_Policies(fname)
